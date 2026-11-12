@@ -17,4 +17,13 @@ module.exports = {
   jwtSecret: required("JWT_SECRET"),
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || "7d",
   bcryptRounds: Number(process.env.BCRYPT_ROUNDS) || 10,
+  // Base NoSQL (MongoDB) : historique de recherches. Facultative : sans URI,
+  // le reste de l'API fonctionne et les routes /api/history répondent 503.
+  mongoUri: process.env.MONGODB_URI || null,
+  mongoDbName: process.env.MONGODB_DB || "meteoapp",
+  // Durée de conservation de l'historique (RGPD) ; 0 = pas d'expiration.
+  historyTtlDays:
+    process.env.HISTORY_TTL_DAYS !== undefined
+      ? Number(process.env.HISTORY_TTL_DAYS)
+      : 90,
 };

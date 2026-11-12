@@ -3,6 +3,7 @@ const path = require("path");
 const request = require("supertest");
 const pool = require("../src/db/pool");
 const app = require("../src/app");
+const { getDb, closeMongo } = require("../src/db/mongo");
 
 // Recrée la base de test à l'identique de la production (schema + seed).
 const resetDb = async () => {
@@ -19,6 +20,14 @@ const registerUser = async (email = "user@test.fr", password = "motdepasse1") =>
 
 const authHeader = (token) => ({ Authorization: `Bearer ${token}` });
 
-const closeDb = () => pool.end();
+const resetMongo = async () => {
+  const db = await getDb();
+  await db.collection("search_history").deleteMany({});
+};
 
-module.exports = { app, pool, resetDb, registerUser, authHeader, closeDb };
+const closeDb = async () => {
+  await pool.end();
+  await closeMongo();
+};
+
+module.exports = { app, pool, resetDb, resetMongo, registerUser, authHeader, closeDb };

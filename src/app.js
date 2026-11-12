@@ -3,10 +3,13 @@ const cors = require("cors");
 const helmet = require("helmet");
 const rateLimit = require("express-rate-limit");
 const pool = require("./db/pool");
+const { getDb } = require("./db/mongo");
+const config = require("./config");
 const errorHandler = require("./middleware/errorHandler");
 const authRoutes = require("./routes/auth");
 const favoritesRoutes = require("./routes/favorites");
 const feedbacksRoutes = require("./routes/feedbacks");
+const historyRoutes = require("./routes/history");
 
 const app = express();
 
@@ -33,15 +36,28 @@ const authLimiter = rateLimit({
 app.get("/health", async (req, res) => {
   try {
     await pool.query("SELECT 1");
-    res.json({ status: "ok" });
   } catch (err) {
-    res.status(503).json({ status: "database unavailable" });
+    return res.status(503).json({ status: "database unavailable" });
   }
+  // La base NoSQL ne sert qu'à l'historique : on l'indique sans faire échouer
+  // la sonde si elle est absente ou en panne.
+  let nosql = "not configured";
+  if (config.mongoUri) {
+    try {
+      const db = await getDb();
+      await db.command({ ping: 1 });
+      nosql = "ok";
+    } catch (err) {
+      nosql = "unavailable";
+    }
+  }
+  return res.json({ status: "ok", nosql });
 });
 
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/favorites", favoritesRoutes);
 app.use("/api/feedbacks", feedbacksRoutes);
+app.use("/api/history", historyRoutes);
 
 app.use((req, res) => res.status(404).json({ error: "Route introuvable." }));
 app.use(errorHandler);
