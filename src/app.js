@@ -49,6 +49,7 @@ app.get("/health", async (req, res) => {
       nosql = "ok";
     } catch (err) {
       nosql = "unavailable";
+      console.error("Erreur MongoDB :", err.message);
     }
   }
   return res.json({ status: "ok", nosql });
